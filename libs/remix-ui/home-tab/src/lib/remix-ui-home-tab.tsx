@@ -73,7 +73,7 @@ export const RemixUiHomeTab = (props: RemixUiHomeTabProps) => {
 
   //  border-right
   return (
-    <div className="d-flex flex-column w-100" data-id="remixUIHTAll">
+    <div className="d-none flex-column w-100" data-id="remixUIHTAll">
       <ThemeContext.Provider value={state.themeQuality}>
         <div className="d-flex flex-row w-100 custom_home_bg">
           <div className="px-2 pl-3 justify-content-start border-right d-flex flex-column" id="remixUIHTLeft" style={{ width: 'inherit' }}>

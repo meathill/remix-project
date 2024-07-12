@@ -17,6 +17,7 @@ import { allCommands, allPrograms } from './commands' // eslint-disable-line
 import TerminalWelcomeMessage from './terminalWelcome' // eslint-disable-line
 import { Toaster } from '@remix-ui/toaster' // eslint-disable-line
 import { ModalDialog } from '@remix-ui/modal-dialog' // eslint-disable-line
+import { sleep } from "@remix-ui/utils";
 import { CustomTooltip } from '@remix-ui/helper'
 
 import './remix-ui-terminal.css'
@@ -595,12 +596,90 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
     }
   }
 
+  const [isResultCorrectContent, setIsResultCorrectContent] = useState('');
+  const [isChecking, setIsChecking] = useState<boolean>(false);
+
   return (
     ( props.visible &&
       <div style={{ flexGrow: 1 }} className="remix_ui_terminal_panel h-100 mb-2" ref={panelRef}>
         <div tabIndex={-1} className="remix_ui_terminal_container d-flex h-100 m-0 flex-column" data-id="terminalContainer">
           {handleAutoComplete()}
-          <div className="position-relative d-flex flex-column-reverse h-100">
+          <div id="bottom-deploy-result" style={{ width: '100%', padding: 20, height: '300px' }}>
+            <button
+              className='udapp_instanceButton text-nowrap overflow-hidden text-truncate w-20 btn btn-sm btn-warning'
+              disabled={isChecking}
+              onClick={async () => {
+                if (isChecking) {
+                  return;
+                }
+                setIsChecking(true);
+
+                const element = document.querySelector('[data-id="Deploy - transact (not payable)"]');
+                (element as HTMLButtonElement).click();
+
+                await sleep(1000);
+
+                const elements = document.querySelectorAll('[data-shared="universalDappUiInstance"]');
+                const parentElement = elements[0];
+                if (parentElement) {
+                  const inputElement = parentElement.querySelector('[data-id="multiParamManagerBasicInputField"]');
+
+                  // 检查目标元素是否存在且为 input 元素
+                  if (inputElement && inputElement.tagName.toLowerCase() === 'input') {
+                    const ChangeEvent = new Event('change', {bubbles: true})
+                    const lastValue = (inputElement as HTMLInputElement).value;
+
+                    const inputValue = '100';
+
+                    (inputElement as HTMLInputElement).value = inputValue
+                    // @ts-ignore
+                    ChangeEvent.simulated = true
+                    // @ts-ignore
+                    const tracker = inputElement._valueTracker
+                    if (tracker) {
+                      tracker.setValue(lastValue);
+                    }
+                    inputElement.dispatchEvent(ChangeEvent);
+
+                    let storeButton = parentElement.querySelector('[data-id="store - transact (not payable)"]');
+                    storeButton = storeButton.querySelector('[data-id="store - transact (not payable)"]');
+                    (storeButton as HTMLButtonElement).click();
+
+                    await sleep(1000)
+
+                    let retButton = parentElement.querySelector('[data-id="retrieve - call"]');
+                    retButton = retButton.querySelector('[data-id="retrieve - call"]');
+                    (retButton as HTMLButtonElement).click();
+
+                    await sleep(1000);
+
+                    let target = parentElement.querySelector('[data-id="treeViewUltreeView"]');
+                    target = findLabelWithClass(target, 'label_value')[0];
+                    // @ts-ignore
+                    let targetValue = target.innerText.split(':');
+                    targetValue = targetValue[1].trim();
+                    console.log(targetValue);
+                    if (targetValue === inputValue) {
+                      setIsResultCorrectContent('正确');
+                    } else {
+                      setIsResultCorrectContent('错误');
+                    }
+                    setIsChecking(false);
+                  } else {
+                    console.log("The target element is not an input or does not exist.");
+                  }
+                } else {
+                  console.log("Parent element with data-shared='universalDappUiInstance' not found.");
+                }
+              }}>
+              {isChecking && (
+                <div className="spinner-border me-1" style={{ width: '1rem', height: '1rem' }} role="status" />
+              )}
+              Test my contract
+            </button>
+            <div className='mt-4'>{isResultCorrectContent}</div>
+          </div>
+          <div className="position-relative d-flex flex-column-reverse" style={{ opacity: 0, height: 0 }}>
             <div id="journal" className="remix_ui_terminal_journal d-flex flex-column pt-3 pb-4 px-2 mx-2 mr-0" data-id="terminalJournal">
               {!terminalState.clearConsole && <TerminalWelcomeMessage storage={storage} packageJson={version} />}
               {terminalState.journalBlocks &&
@@ -800,6 +879,17 @@ const typewrite = (elementsRef, message, callback) => {
 function isHtml (value) {
   if (!value.indexOf) return false
   return value.indexOf('<div') !== -1 || value.indexOf('<span') !== -1 || value.indexOf('<p') !== -1 || value.indexOf('<label') !== -1 || value.indexOf('<b') !== -1
+}
+
+function findLabelWithClass(element, className) {
+  let targetLabels = [];
+  if (element.tagName.toLowerCase() === 'label' && element.classList.contains('m-0') && element.classList.contains(className)) {
+    targetLabels.push(element);
+  }
+  for (const child of element.children) {
+    targetLabels = targetLabels.concat(findLabelWithClass(child, className));
+  }
+  return targetLabels;
 }
 
 export default RemixUiTerminal

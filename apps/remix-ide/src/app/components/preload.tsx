@@ -1,6 +1,6 @@
 import { RemixApp } from '@remix-ui/app'
 import axios from 'axios'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import * as packageJson from '../../../../../package.json'
 import { fileSystem, fileSystems } from '../files/fileSystem'
 import { indexedDBFileSystem } from '../files/filesystems/indexedDB'
@@ -106,11 +106,8 @@ export const Preload = (props: any) => {
       const index = Math.floor(Math.random() * (tips.length - 1))
       setTip(tips[index])
     }
-    try {
-      showRemixTips()
-    } catch (e) {
-      console.log(e)
-    }
+    showRemixTips()
+      .catch(console.log);
     return () => {
       abortController.abort();
     };

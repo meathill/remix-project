@@ -320,7 +320,7 @@ export const TabsUI = (props: TabsUIProps) => {
         >
           <TabList className="d-flex flex-row align-items-center">
             {props.tabs.map((tab, i) => (
-              <Tab className="" key={tab.name}>
+              <Tab className={tab.id === 'home' ? 'd-none' : ''} key={tab.name}>
                 {renderTab(tab, i)}
               </Tab>
             ))}

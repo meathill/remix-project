@@ -19,7 +19,7 @@ export const runTabInitialState: RunTabState = {
   sendValue: '0',
   sendUnit: 'wei',
   gasLimit: 0,
-  selectExEnv: 'vm-cancun',
+  selectExEnv: 'vm-shanghai',
   personalMode: false,
   networkName: 'VM',
   chainId:'-',

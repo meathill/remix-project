@@ -18,3 +18,4 @@ export { runSolidityUnittestingAction } from './script-templates/solidity-test-a
 export { runSlitherAction } from './script-templates/slither-action'
 export { runJsTestAction } from './script-templates/run-js-test-action'
 
+export * as HackQuestQuests from '@moonshotcommons/hackquest-quest';

@@ -1,5 +1,5 @@
 import { CustomTooltip } from '@remix-ui/helper'
-import React, { useContext, useEffect } from 'react' // eslint-disable-line
+import React, { useContext } from 'react' // eslint-disable-line
 import { FormattedMessage } from 'react-intl'
 import { TerminalContext } from '../context'
 import { RemixUiTerminalProps, TOGGLE } from '../types/terminalTypes'

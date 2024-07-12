@@ -1,6 +1,18 @@
+import * as HackQuestTemplates from '@moonshotcommons/hackquest-quest';
 
 export const templates = (intl) => {
   return [
+    {
+      name: "HackQuest",
+      items: Object.entries(HackQuestTemplates).map(([key, value]) => {
+        return {
+          value: key,
+          tagList: ["Solidity"],
+          displayName: key,
+          description: key,
+        };
+      }),
+    },
     {
       name: "Generic",
       items: [
