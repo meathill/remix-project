@@ -1,24 +1,23 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useEffect, useReducer, useRef, SyntheticEvent, MouseEvent, useContext } from 'react' // eslint-disable-line
-import { FormattedMessage, useIntl } from 'react-intl'
+import React, { SyntheticEvent, useContext, useEffect, useReducer, useRef, useState } from 'react' // eslint-disable-line
+import { useIntl } from 'react-intl'
 import {
-  registerCommandAction,
-  registerLogScriptRunnerAction,
-  registerInfoScriptRunnerAction,
-  registerErrorScriptRunnerAction,
-  registerWarnScriptRunnerAction,
-  listenOnNetworkAction,
   initListeningOnNetwork,
+  registerCommandAction,
+  registerErrorScriptRunnerAction,
+  registerInfoScriptRunnerAction,
+  registerLogScriptRunnerAction,
+  registerWarnScriptRunnerAction,
 } from './actions/terminalAction'
 import { isBigInt } from 'web3-validator'
-import { initialState, registerCommandReducer, addCommandHistoryReducer, registerScriptRunnerReducer } from './reducers/terminalReducer'
-import { getKeyOf, getValueOf, Objectfilter, matched } from './utils/utils'
+import { addCommandHistoryReducer, initialState, registerScriptRunnerReducer } from './reducers/terminalReducer'
+import { getKeyOf, getValueOf, matched, Objectfilter } from './utils/utils'
 import { allCommands, allPrograms } from './commands' // eslint-disable-line
 import TerminalWelcomeMessage from './terminalWelcome' // eslint-disable-line
 import { Toaster } from '@remix-ui/toaster' // eslint-disable-line
 import { ModalDialog } from '@remix-ui/modal-dialog' // eslint-disable-line
-import { sleep } from "@remix-ui/utils";
-import { CustomTooltip } from '@remix-ui/helper'
+import { HqValidationCommand, parseValidationScript, sleep } from "@remix-ui/utils";
+import * as HackQuestTemplates from '@moonshotcommons/hackquest-quest';
 
 import './remix-ui-terminal.css'
 import vm from 'vm'
@@ -28,9 +27,18 @@ import RenderUnKnownTransactions from './components/RenderUnknownTransactions' /
 import RenderCall from './components/RenderCall' // eslint-disable-line
 import RenderKnownTransactions from './components/RenderKnownTransactions' // eslint-disable-line
 import parse from 'html-react-parser'
-import { EMPTY_BLOCK, KNOWN_TRANSACTION, RemixUiTerminalProps, SET_ISVM, UNKNOWN_TRANSACTION } from './types/terminalTypes'
+import {
+  EMPTY_BLOCK,
+  KNOWN_TRANSACTION,
+  RemixUiTerminalProps,
+  SET_ISVM,
+  UNKNOWN_TRANSACTION
+} from './types/terminalTypes'
 import { wrapScript } from './utils/wrapScript'
 import { TerminalContext } from './context'
+import { QueryParams } from "@remix-project/remix-lib";
+import type { UrlParametersType } from "../../../workspace/src/lib/actions";
+
 const _paq = (window._paq = window._paq || [])
 
 /* eslint-disable-next-line */
@@ -563,6 +571,122 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
     }))
   }
 
+  async function handleCheckResult() {
+    if (isChecking) return;
+    // check workspace
+    const queryParams = new QueryParams();
+    const workspace = (queryParams.get() as UrlParametersType).workspace;
+    if (!workspace) return;
+
+    setIsChecking(true);
+
+    // deploy contract fisrt
+    const element = document.querySelector('[data-id="Deploy - transact (not payable)"]');
+    (element as HTMLButtonElement).click();
+
+    await sleep(1000);
+
+    // get validation script
+    const script = HackQuestTemplates[workspace]['retrieves/index.js'];
+    const commands = parseValidationScript(script);
+    const elements = document.querySelectorAll('[data-shared="universalDappUiInstance"]');
+    const parentElement = elements[0];
+    if (!parentElement) {
+      console.log("Parent element with data-shared='universalDappUiInstance' not found.");
+      return;
+    }
+
+    /*
+    const inputElement = parentElement.querySelector('[data-id="multiParamManagerBasicInputField"]');
+
+    // 检查目标元素是否存在且为 input 元素
+    if (!inputElement || inputElement.tagName.toLowerCase() !== 'input') {
+      console.log("The target element is not an input or does not exist.");
+      return;
+    }
+
+    const ChangeEvent = new Event('change', { bubbles: true })
+    const lastValue = (inputElement as HTMLInputElement).value;
+
+    const inputValue = '100';
+
+    (inputElement as HTMLInputElement).value = inputValue
+    // @ts-ignore
+    ChangeEvent.simulated = true
+    // @ts-ignore
+    const tracker = inputElement._valueTracker
+    if (tracker) {
+      tracker.setValue(lastValue);
+    }
+    inputElement.dispatchEvent(ChangeEvent);
+
+    let storeButton = parentElement.querySelector('[data-id="store - transact (not payable)"]');
+    storeButton = storeButton.querySelector('[data-id="store - transact (not payable)"]');
+    (storeButton as HTMLButtonElement).click();
+
+    await sleep(1000)
+    */
+
+    const result = {};
+    for (const command of commands) {
+      switch (command.type) {
+      case HqValidationCommand.retrieve:
+        {
+          let retButton = parentElement.querySelector('[data-id="retrieve - call"]');
+          retButton = retButton.querySelector('[data-id="retrieve - call"]');
+          (retButton as HTMLButtonElement).click();
+
+          await sleep(1000);
+
+          let target = parentElement.querySelector('[data-id="treeViewUltreeView"]');
+          target = findLabelWithClass(target, 'label_value')[0];
+          // @ts-ignore
+          const [key, value] = target.innerText.split(':');
+          result[key] = value;
+        }
+        break;
+
+      case HqValidationCommand.assert:
+        {
+          const { key, value, message } = command.args;
+          if (result[key] !== value) {
+            setIsResultCorrectContent(`Validation failed: ${key} is ${result[key]}, but expected ${value}`);
+            window.parent.postMessage({
+              type: 'questResult',
+              from: 'hackquest',
+              message,
+            }, '*');
+            return;
+          }
+        }
+        break;
+
+      default:
+        console.log(`Unknown command type: ${command.type}`);
+        break;
+      }
+    }
+
+    window.parent.postMessage({
+      type: 'checkResult',
+      from: 'hackquest',
+    }, '*');
+    setIsChecking(false);
+  }
+
+  useEffect(() => {
+    function onMessage(event) {
+      if (event.origin !== 'hackquest.io') return;
+
+      handleCheckResult();
+    }
+    window.addEventListener('message', onMessage);
+
+    return function () {
+      window.removeEventListener('message', onMessage);
+    }
+  }, []);
+
   useEffect(() => {
     ;(async () => {
       const storage = await props.plugin.call('storage', 'formatString', await props.plugin.call('storage', 'getStorage'))
@@ -608,70 +732,8 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
             <button
               className='udapp_instanceButton text-nowrap overflow-hidden text-truncate w-20 btn btn-sm btn-warning'
               disabled={isChecking}
-              onClick={async () => {
-                if (isChecking) {
-                  return;
-                }
-                setIsChecking(true);
-
-                const element = document.querySelector('[data-id="Deploy - transact (not payable)"]');
-                (element as HTMLButtonElement).click();
-
-                await sleep(1000);
-
-                const elements = document.querySelectorAll('[data-shared="universalDappUiInstance"]');
-                const parentElement = elements[0];
-                if (parentElement) {
-                  const inputElement = parentElement.querySelector('[data-id="multiParamManagerBasicInputField"]');
-
-                  // 检查目标元素是否存在且为 input 元素
-                  if (inputElement && inputElement.tagName.toLowerCase() === 'input') {
-                    const ChangeEvent = new Event('change', {bubbles: true})
-                    const lastValue = (inputElement as HTMLInputElement).value;
-
-                    const inputValue = '100';
-
-                    (inputElement as HTMLInputElement).value = inputValue
-                    // @ts-ignore
-                    ChangeEvent.simulated = true
-                    // @ts-ignore
-                    const tracker = inputElement._valueTracker
-                    if (tracker) {
-                      tracker.setValue(lastValue);
-                    }
-                    inputElement.dispatchEvent(ChangeEvent);
-
-                    let storeButton = parentElement.querySelector('[data-id="store - transact (not payable)"]');
-                    storeButton = storeButton.querySelector('[data-id="store - transact (not payable)"]');
-                    (storeButton as HTMLButtonElement).click();
-
-                    await sleep(1000)
-
-                    let retButton = parentElement.querySelector('[data-id="retrieve - call"]');
-                    retButton = retButton.querySelector('[data-id="retrieve - call"]');
-                    (retButton as HTMLButtonElement).click();
-
-                    await sleep(1000);
-
-                    let target = parentElement.querySelector('[data-id="treeViewUltreeView"]');
-                    target = findLabelWithClass(target, 'label_value')[0];
-                    // @ts-ignore
-                    let targetValue = target.innerText.split(':');
-                    targetValue = targetValue[1].trim();
-                    console.log(targetValue);
-                    if (targetValue === inputValue) {
-                      setIsResultCorrectContent('正确');
-                    } else {
-                      setIsResultCorrectContent('错误');
-                    }
-                    setIsChecking(false);
-                  } else {
-                    console.log("The target element is not an input or does not exist.");
-                  }
-                } else {
-                  console.log("Parent element with data-shared='universalDappUiInstance' not found.");
-                }
-              }}>
+              onClick={handleCheckResult}
+            >
               {isChecking && (
                 <div className="spinner-border me-1" style={{ width: '1rem', height: '1rem' }} role="status" />
               )}
