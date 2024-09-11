@@ -37,6 +37,7 @@ import { addSlash, checkSlash, checkSpecialChars } from '@remix-ui/helper'
 
 import { FileTree, JSONStandardInput, WorkspaceTemplate } from '../types'
 import { QueryParams } from '@remix-project/remix-lib'
+import * as HackQuestQuests from '@moonshotcommons/hackquest-quest';
 import * as templateWithContent from '@remix-project/remix-ws-templates'
 import { ROOT_PATH } from '../utils/constants'
 // eslint-disable-next-line @nrwl/nx/enforce-module-boundaries
@@ -413,8 +414,8 @@ export const loadWorkspacePreset = async (template: WorkspaceTemplate = 'remixDe
     try {
       const files: Record<string, string> = {};
       // for HackQuest quests, we need to load only the contracts
-      if (template in templateWithContent.HackQuestQuests) {
-        const _files = Object.entries(templateWithContent.HackQuestQuests[template] as Record<string, string>)
+      if (template in HackQuestQuests) {
+        const _files = Object.entries(templateWithContent[template] as Record<string, string>)
           .reduce((acc, [key, content]) => {
             if (!key.includes('contracts/')) return acc;
 

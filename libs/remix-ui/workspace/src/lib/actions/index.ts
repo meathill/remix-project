@@ -204,7 +204,7 @@ export const initWorkspace = (filePanelPlugin) => async (reducerDispatch: React.
 
     } else if (params.workspace) {
       const workspaceName = params.workspace
-      const template = params.template as WorkspaceTemplate
+      const template = `q_${params.workspace.replace(/-/g, '_')}` as WorkspaceTemplate
       const index = workspaces.findIndex(element => element.name == workspaceName)
       if (index !== -1) {
         workspaceProvider.setWorkspace(workspaceName)
