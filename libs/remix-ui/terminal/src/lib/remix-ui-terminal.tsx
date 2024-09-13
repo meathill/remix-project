@@ -575,16 +575,30 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
     if (isChecking) return;
     // check workspace
     const queryParams = new QueryParams();
-    const workspace = (queryParams.get() as UrlParametersType).workspace;
+    let workspace = (queryParams.get() as UrlParametersType).workspace;
     if (!workspace) return;
 
+    workspace = `q_${workspace.replace(/-/g, '_')}`;
     setIsChecking(true);
 
-    // deploy contract fisrt
-    const element = document.querySelector('[data-id="Deploy - transact (not payable)"]');
+    // deploy contract first
+    const element = document.querySelector('[data-id="play-editor"]');
     (element as HTMLButtonElement).click();
 
     await sleep(1000);
+
+    // should pass deployment
+    const check = document.querySelector('i.remixui_status.remixui_statusCheck');
+    if (!check) {
+      setIsResultCorrectContent('Contract deployment failed.');
+      window.parent.postMessage({
+        type: 'questResult',
+        from: 'hackquest',
+        message: 'Contract deployment failed.',
+      }, '*');
+      setIsChecking(true);
+      return;
+    }
 
     // get validation script
     const script = HackQuestTemplates[workspace]['retrieves/index.js'];
