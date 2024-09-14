@@ -682,7 +682,7 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
     }
 
     window.parent.postMessage({
-      type: 'checkResult',
+      type: 'questResult',
       from: 'hackquest',
     }, '*');
     setIsChecking(false);

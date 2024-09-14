@@ -5290,10 +5290,10 @@
   dependencies:
     "@monaco-editor/loader" "^1.4.0"
 
-"@moonshotcommons/hackquest-quest@^0.1.2":
-  version "0.1.2"
-  resolved "https://npm.pkg.github.com/download/@moonshotcommons/hackquest-quest/0.1.2/233193ec20bcd4502927f684892fa7269db41390#233193ec20bcd4502927f684892fa7269db41390"
-  integrity sha512-6Nxyws6AnsCdtd7yhZwqYD58JetypVAC6WbOnbi34cUBHddIYAq/ns+hIPrqjBhJsK3th9QnA+W2KPdmBXvs3A==
+"@moonshotcommons/hackquest-quest@^0.1.4":
+  version "0.1.4"
+  resolved "https://npm.pkg.github.com/download/@moonshotcommons/hackquest-quest/0.1.4/e8bcee26e203979a68744aecb5127c62430edd69#e8bcee26e203979a68744aecb5127c62430edd69"
+  integrity sha512-fynwRLktNz15KwGpNp1vcdIXKEsbU/RthudNdZhbwUYOZYS+84DZ0XYzphDPTa0wpAahZgnAf/JofI+gofKgLg==
   dependencies:
     vite "^5.4.2"
 
