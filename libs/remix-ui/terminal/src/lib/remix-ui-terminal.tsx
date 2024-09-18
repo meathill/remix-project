@@ -581,7 +581,7 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
     workspace = `q_${workspace.replace(/-/g, '_')}`;
     setIsChecking(true);
 
-    // deploy contract first
+    // compile contract first
     const element = document.querySelector('[data-id="play-editor"]');
     (element as HTMLButtonElement).click();
 
@@ -599,6 +599,12 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
       setIsChecking(true);
       return;
     }
+
+    // deploy contract
+    const deployButton = document.querySelector('[data-id="Deploy - transact (not payable)"]');
+    (deployButton as HTMLButtonElement).click();
+
+    await sleep(1000);
 
     // get validation script
     const script = HackQuestTemplates[workspace]['retrieves/index.js'];
@@ -646,8 +652,7 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
       switch (command.type) {
       case HqValidationCommand.retrieve:
         {
-          let retButton = parentElement.querySelector('[data-id="retrieve - call"]');
-          retButton = retButton.querySelector('[data-id="retrieve - call"]');
+          const retButton = parentElement.querySelector('[data-id="retrieve - call"]');
           (retButton as HTMLButtonElement).click();
 
           await sleep(1000);
