@@ -600,6 +600,12 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
       return;
     }
 
+    // remove last deployed contract
+    const removeButton = document.querySelector('[data-id="universalDappUiUdappClose"]');
+    if (removeButton) {
+      (removeButton as HTMLButtonElement).click();
+    }
+
     // deploy contract
     const deployButton = document.querySelector('[data-id="Deploy - transact (not payable)"]');
     (deployButton as HTMLButtonElement).click();
@@ -652,7 +658,7 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
       switch (command.type) {
       case HqValidationCommand.retrieve:
         {
-          const retButton = parentElement.querySelector('[data-id="retrieve - call"]');
+          let retButton = parentElement.querySelector('[data-id="retrieve - call"],[data-id="retrieve - transact (not payable)"]');
           (retButton as HTMLButtonElement).click();
 
           await sleep(1000);
@@ -670,13 +676,14 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
       case HqValidationCommand.assert:
         {
           const { key, value, message } = command.args;
-          if (result[key] !== value) {
+          if (value && result[key] !== value) {
             setIsResultCorrectContent(`Validation failed: ${key} is ${result[key]}, but expected ${value}`);
             window.parent.postMessage({
               type: 'questResult',
               from: 'hackquest',
               message,
             }, '*');
+            setIsChecking(false);
             return;
           }
         }
@@ -756,7 +763,7 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
               onClick={handleCheckResult}
             >
               {isChecking && (
-                <div className="spinner-border me-1" style={{ width: '1rem', height: '1rem' }} role="status" />
+                <div className="spinner-border mr-2" style={{ width: '1rem', height: '1rem' }} role="status" />
               )}
               Test my contract
             </button>
