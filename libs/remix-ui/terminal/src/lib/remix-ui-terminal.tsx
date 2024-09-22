@@ -659,9 +659,11 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
 
           let target = parentElement.querySelector('[data-id="treeViewUltreeView"]');
           target = findLabelWithClass(target, 'label_value')[0];
-          // @ts-ignore
-          const [key, value] = target.innerText.split(':');
-          result[key] = value;
+          if (target) {
+            // @ts-ignore
+            const [key, value] = target.innerText.split(':');
+            result[key] = value;
+          }
         }
         break;
 
