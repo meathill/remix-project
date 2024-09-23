@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-use-before-define
-import React, { useEffect } from 'react'
+import React from 'react'
 import { FormattedMessage } from 'react-intl'
 import { EnvironmentProps, Provider } from '../types'
 import { Dropdown } from 'react-bootstrap'
@@ -10,12 +10,6 @@ export function EnvironmentUI(props: EnvironmentProps) {
   Object.entries(props.providers.providerList.filter((provider) => { return provider.isVM }))
   Object.entries(props.providers.providerList.filter((provider) => { return provider.isInjected }))
   Object.entries(props.providers.providerList.filter((provider) => { return !(provider.isVM || provider.isInjected) }))
-
-  useEffect(() => {
-    setTimeout(() => {
-      handleChangeExEnv('vm-shanghai')
-    }, 2000)
-  }, [])
 
   const handleChangeExEnv = (env: string) => {
     const provider = props.providers.providerList.find((exEnv) => exEnv.name === env)
