@@ -658,16 +658,25 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
       switch (command.type) {
       case HqValidationCommand.retrieve:
         {
-          let retButton = parentElement.querySelector('[data-id="retrieve - call"],[data-id="retrieve - transact (not payable)"]');
-          (retButton as HTMLButtonElement).click();
+          const retButton = parentElement.querySelector('[data-id="retrieve - call"],[data-id="retrieve - transact (not payable)"]');
+          if (!retButton) {
+            window.parent.postMessage({
+              type: 'questResult',
+              from: 'hackquest',
+              message: 'Retrieve button not found.',
+            }, '*');
+            return;
+          }
 
+          (retButton as HTMLButtonElement).click();
           await sleep(1000);
 
-          let target = parentElement.querySelector('[data-id="treeViewUltreeView"]');
-          target = findLabelWithClass(target, 'label_value')[0];
-          if (target) {
-            // @ts-ignore
-            const [key, value] = target.innerText.split(':');
+          const property = retButton.closest('.udapp_contractProperty');
+          const valuesContainer = property.nextElementSibling;
+          const valueItems = valuesContainer.querySelectorAll('label.label_value');
+          for (const valueItem of valueItems) {
+            const kv = (valueItem as HTMLLabelElement).innerText.split(':').pop();
+            const [key, value = ''] = kv.split(' ');
             result[key] = value;
           }
         }
@@ -676,7 +685,7 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
       case HqValidationCommand.assert:
         {
           const { key, value, message } = command.args;
-          if (value && result[key] !== value) {
+          if (result[key] !== value) {
             setIsResultCorrectContent(`Validation failed: ${key} is ${result[key]}, but expected ${value}`);
             window.parent.postMessage({
               type: 'questResult',
