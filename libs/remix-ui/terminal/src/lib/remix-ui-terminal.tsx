@@ -676,7 +676,7 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
           const valueItems = valuesContainer.querySelectorAll('label.label_value');
           for (const valueItem of valueItems) {
             const kv = (valueItem as HTMLLabelElement).innerText.split(':').pop();
-            const [key, value = ''] = kv.split(' ');
+            const [key, value = ''] = kv.trim().split(' ');
             result[key] = value;
           }
         }
