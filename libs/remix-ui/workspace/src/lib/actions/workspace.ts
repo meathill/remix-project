@@ -37,6 +37,7 @@ import { addSlash, checkSlash, checkSpecialChars } from '@remix-ui/helper'
 
 import { FileTree, JSONStandardInput, WorkspaceTemplate } from '../types'
 import { QueryParams } from '@remix-project/remix-lib'
+import * as HackQuestQuests from '@moonshotcommons/hackquest-quest';
 import * as templateWithContent from '@remix-project/remix-ws-templates'
 import { ROOT_PATH } from '../utils/constants'
 // eslint-disable-next-line @nrwl/nx/enforce-module-boundaries
@@ -44,7 +45,6 @@ import { IndexedDBStorage } from '../../../../../../apps/remix-ide/src/app/files
 import { getUncommittedFiles } from '../utils/gitStatusFilter'
 import { AppModal, ModalTypes } from '@remix-ui/app'
 import { branch, cloneInputType, IGitApi, gitUIPanels } from '@remix-ui/git'
-import * as templates from '@remix-project/remix-ws-templates'
 import { Plugin } from "@remixproject/engine";
 import { CustomRemixApi } from '@remix-api'
 
@@ -236,7 +236,11 @@ export const populateWorkspace = async (
   }
 }
 
-export const createWorkspaceTemplate = async (workspaceName: string, template: WorkspaceTemplate = 'remixDefault', metadata?: TemplateType) => {
+export const createWorkspaceTemplate = async (
+  workspaceName: string,
+  template: WorkspaceTemplate = 'remixDefault',
+  metadata?: TemplateType,
+) => {
   if (!workspaceName) throw new Error('workspace name cannot be empty')
   if (checkSpecialChars(workspaceName) || checkSlash(workspaceName)) throw new Error('special characters are not allowed')
   if ((await workspaceExists(workspaceName)) && template === 'remixDefault') throw new Error('workspace already exists')
@@ -408,12 +412,27 @@ export const loadWorkspacePreset = async (template: WorkspaceTemplate = 'remixDe
 
   default:
     try {
-      const templateList = Object.keys(templateWithContent)
-      if (!templateList.includes(template)) break
+      const files: Record<string, string> = {};
+      // for HackQuest quests, we need to load only the contracts
+      if (template in HackQuestQuests) {
+        const _files = Object.entries(templateWithContent[template] as Record<string, string>)
+          .reduce((acc, [key, content]) => {
+            if (!key.includes('contracts/')) return acc;
+
+            key = key.replace(/^contracts\//, '');
+            acc[key] = content;
+            return acc;
+          }, {} as Record<string, string>);
+        Object.assign(files, _files);
+      } else {
+        const templateList = Object.keys(templateWithContent)
+        if (!templateList.includes(template)) break;
+        // @ts-ignore
+        const _files = await templateWithContent[template](opts, plugin)
+        Object.assign(files, _files);
+      }
 
       _paq.push(['trackEvent', 'workspace', 'template', template])
-      // @ts-ignore
-      const files = await templateWithContent[template](opts, plugin)
       for (const file in files) {
         try {
           const uniqueFileName = await createNonClashingNameAsync(file, plugin.fileManager)

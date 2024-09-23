@@ -78,7 +78,7 @@ export const RemixUIGridCell = (props: RemixUIGridCellProps) => {
             <div className="d-flex remixui_grid_cell w-100 flex-column">
               { !props.hideTitle && <div className='d-flex flex-row pb-1 mb-1 align-items-end' style={{ minWidth: '8rem', height: '1rem' }}>
                 { props.logo && <img className='remixui_grid_view_logo mr-1' src={props.logo} style={{ width: '1rem', height: '1rem' }}/> }
-                { props.logos && props.logos.map((logo) => <img className='remixui_grid_view_logo mr-1' src={logo} style={{ width: '1rem', height: '1rem' }}/>)}
+                { props.logos && props.logos.map((logo) => <img className='remixui_grid_view_logo mr-1' key={logo} src={logo} style={{ width: '1rem', height: '1rem' }}/>)}
                 { props.title &&
                   <CustomTooltip
                     placement="top"
@@ -108,6 +108,7 @@ export const RemixUIGridCell = (props: RemixUIGridCellProps) => {
             { Object.keys(props.tagList).map((key) => (
               filterCon.keyValueMap[props.tagList[key]]?.enabled && (
                 <CustomTooltip
+                  key={key}
                   placement="right"
                   tooltipId="pluginManagerInactiveTitleLinkToDoc"
                   tooltipClasses="text-nowrap"

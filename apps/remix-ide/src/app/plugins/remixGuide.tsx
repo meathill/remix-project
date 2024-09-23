@@ -113,6 +113,7 @@ export class RemixGuidePlugin extends ViewPlugin {
             return <RemixUIGridSection
               plugin={this}
               title={section.title}
+              key={section.title}
               hScrollable= {true}
             >
               { section.cells.map(cell => {

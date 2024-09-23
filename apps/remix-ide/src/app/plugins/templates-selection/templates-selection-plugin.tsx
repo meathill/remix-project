@@ -170,7 +170,7 @@ export class TemplatesSelectionPlugin extends ViewPlugin {
                 >
                   <div className='d-flex justify-content-between h-100 flex-column'>
                     <div className='d-flex flex-column'>
-                      <div>
+                      <div className='text-wrap text-break'>
                         {item.description && <span className='text-dark'>{item.description}</span>}
                       </div>
                       <div className='d-flex flex-wrap'>
@@ -266,4 +266,3 @@ const createModalMessage = async (
     </>
   )
 }
-

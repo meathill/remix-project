@@ -1,23 +1,23 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useEffect, useReducer, useRef, SyntheticEvent, MouseEvent, useContext } from 'react' // eslint-disable-line
-import { FormattedMessage, useIntl } from 'react-intl'
+import React, { SyntheticEvent, useContext, useEffect, useReducer, useRef, useState } from 'react' // eslint-disable-line
+import { useIntl } from 'react-intl'
 import {
-  registerCommandAction,
-  registerLogScriptRunnerAction,
-  registerInfoScriptRunnerAction,
-  registerErrorScriptRunnerAction,
-  registerWarnScriptRunnerAction,
-  listenOnNetworkAction,
   initListeningOnNetwork,
+  registerCommandAction,
+  registerErrorScriptRunnerAction,
+  registerInfoScriptRunnerAction,
+  registerLogScriptRunnerAction,
+  registerWarnScriptRunnerAction,
 } from './actions/terminalAction'
 import { isBigInt } from 'web3-validator'
-import { initialState, registerCommandReducer, addCommandHistoryReducer, registerScriptRunnerReducer } from './reducers/terminalReducer'
-import { getKeyOf, getValueOf, Objectfilter, matched } from './utils/utils'
+import { addCommandHistoryReducer, initialState, registerScriptRunnerReducer } from './reducers/terminalReducer'
+import { getKeyOf, getValueOf, matched, Objectfilter } from './utils/utils'
 import { allCommands, allPrograms } from './commands' // eslint-disable-line
 import TerminalWelcomeMessage from './terminalWelcome' // eslint-disable-line
 import { Toaster } from '@remix-ui/toaster' // eslint-disable-line
 import { ModalDialog } from '@remix-ui/modal-dialog' // eslint-disable-line
-import { CustomTooltip } from '@remix-ui/helper'
+import { HqValidationCommand, parseValidationScript, sleep } from "@remix-ui/utils";
+import * as HackQuestTemplates from '@moonshotcommons/hackquest-quest';
 
 import './remix-ui-terminal.css'
 import vm from 'vm'
@@ -27,9 +27,18 @@ import RenderUnKnownTransactions from './components/RenderUnknownTransactions' /
 import RenderCall from './components/RenderCall' // eslint-disable-line
 import RenderKnownTransactions from './components/RenderKnownTransactions' // eslint-disable-line
 import parse from 'html-react-parser'
-import { EMPTY_BLOCK, KNOWN_TRANSACTION, RemixUiTerminalProps, SET_ISVM, UNKNOWN_TRANSACTION } from './types/terminalTypes'
+import {
+  EMPTY_BLOCK,
+  KNOWN_TRANSACTION,
+  RemixUiTerminalProps,
+  SET_ISVM,
+  UNKNOWN_TRANSACTION
+} from './types/terminalTypes'
 import { wrapScript } from './utils/wrapScript'
 import { TerminalContext } from './context'
+import { QueryParams } from "@remix-project/remix-lib";
+import type { UrlParametersType } from "../../../workspace/src/lib/actions";
+
 const _paq = (window._paq = window._paq || [])
 
 /* eslint-disable-next-line */
@@ -562,6 +571,150 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
     }))
   }
 
+  async function handleCheckResult() {
+    if (isChecking) return;
+    // check workspace
+    const queryParams = new QueryParams();
+    let workspace = (queryParams.get() as UrlParametersType).workspace;
+    if (!workspace) return;
+
+    workspace = `q_${workspace.replace(/-/g, '_')}`;
+    setIsChecking(true);
+
+    // compile contract first
+    const element = document.querySelector('[data-id="play-editor"]');
+    (element as HTMLButtonElement).click();
+
+    await sleep(1000);
+
+    // should pass deployment
+    const check = document.querySelector('i.remixui_status.remixui_statusCheck');
+    if (!check) {
+      setIsResultCorrectContent('Contract deployment failed.');
+      window.parent.postMessage({
+        type: 'questResult',
+        from: 'hackquest',
+        message: 'Contract deployment failed.',
+      }, '*');
+      setIsChecking(true);
+      return;
+    }
+
+    // remove last deployed contract
+    const removeButton = document.querySelector('[data-id="universalDappUiUdappClose"]');
+    if (removeButton) {
+      (removeButton as HTMLButtonElement).click();
+    }
+
+    // deploy contract
+    const deployButton = document.querySelector('[data-id="Deploy - transact (not payable)"]');
+    (deployButton as HTMLButtonElement).click();
+
+    await sleep(1000);
+
+    // get validation script
+    const script = HackQuestTemplates[workspace]['retrieves/index.js'];
+    const commands = parseValidationScript(script);
+    const elements = document.querySelectorAll('[data-shared="universalDappUiInstance"]');
+    const parentElement = elements[0];
+    if (!parentElement) {
+      console.log("Parent element with data-shared='universalDappUiInstance' not found.");
+      return;
+    }
+
+    /*
+    const inputElement = parentElement.querySelector('[data-id="multiParamManagerBasicInputField"]');
+
+    // 检查目标元素是否存在且为 input 元素
+    if (!inputElement || inputElement.tagName.toLowerCase() !== 'input') {
+      console.log("The target element is not an input or does not exist.");
+      return;
+    }
+
+    const ChangeEvent = new Event('change', { bubbles: true })
+    const lastValue = (inputElement as HTMLInputElement).value;
+
+    const inputValue = '100';
+
+    (inputElement as HTMLInputElement).value = inputValue
+    // @ts-ignore
+    ChangeEvent.simulated = true
+    // @ts-ignore
+    const tracker = inputElement._valueTracker
+    if (tracker) {
+      tracker.setValue(lastValue);
+    }
+    inputElement.dispatchEvent(ChangeEvent);
+
+    let storeButton = parentElement.querySelector('[data-id="store - transact (not payable)"]');
+    storeButton = storeButton.querySelector('[data-id="store - transact (not payable)"]');
+    (storeButton as HTMLButtonElement).click();
+
+    await sleep(1000)
+    */
+
+    const result = {};
+    for (const command of commands) {
+      switch (command.type) {
+      case HqValidationCommand.retrieve:
+        {
+          let retButton = parentElement.querySelector('[data-id="retrieve - call"],[data-id="retrieve - transact (not payable)"]');
+          (retButton as HTMLButtonElement).click();
+
+          await sleep(1000);
+
+          let target = parentElement.querySelector('[data-id="treeViewUltreeView"]');
+          target = findLabelWithClass(target, 'label_value')[0];
+          if (target) {
+            // @ts-ignore
+            const [key, value] = target.innerText.split(':');
+            result[key] = value;
+          }
+        }
+        break;
+
+      case HqValidationCommand.assert:
+        {
+          const { key, value, message } = command.args;
+          if (value && result[key] !== value) {
+            setIsResultCorrectContent(`Validation failed: ${key} is ${result[key]}, but expected ${value}`);
+            window.parent.postMessage({
+              type: 'questResult',
+              from: 'hackquest',
+              message,
+            }, '*');
+            setIsChecking(false);
+            return;
+          }
+        }
+        break;
+
+      default:
+        console.log(`Unknown command type: ${command.type}`);
+        break;
+      }
+    }
+
+    window.parent.postMessage({
+      type: 'questResult',
+      from: 'hackquest',
+    }, '*');
+    setIsChecking(false);
+  }
+
+  useEffect(() => {
+    function onMessage(event) {
+      if (event.origin !== 'hackquest.io') return;
+
+      handleCheckResult();
+    }
+    window.addEventListener('message', onMessage);
+
+    return function () {
+      window.removeEventListener('message', onMessage);
+    }
+  }, []);
+
   useEffect(() => {
     ;(async () => {
       const storage = await props.plugin.call('storage', 'formatString', await props.plugin.call('storage', 'getStorage'))
@@ -595,12 +748,28 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
     }
   }
 
+  const [isResultCorrectContent, setIsResultCorrectContent] = useState('');
+  const [isChecking, setIsChecking] = useState<boolean>(false);
+
   return (
     ( props.visible &&
       <div style={{ flexGrow: 1 }} className="remix_ui_terminal_panel h-100 mb-2" ref={panelRef}>
         <div tabIndex={-1} className="remix_ui_terminal_container d-flex h-100 m-0 flex-column" data-id="terminalContainer">
           {handleAutoComplete()}
-          <div className="position-relative d-flex flex-column-reverse h-100">
+          <div id="bottom-deploy-result" style={{ width: '100%', padding: 20, height: '300px' }}>
+            <button
+              className='udapp_instanceButton text-nowrap overflow-hidden text-truncate w-20 btn btn-sm btn-warning'
+              disabled={isChecking}
+              onClick={handleCheckResult}
+            >
+              {isChecking && (
+                <div className="spinner-border mr-2" style={{ width: '1rem', height: '1rem' }} role="status" />
+              )}
+              Test my contract
+            </button>
+            <div className='mt-4'>{isResultCorrectContent}</div>
+          </div>
+          <div className="position-relative d-flex flex-column-reverse" style={{ opacity: 0, height: 0 }}>
             <div id="journal" className="remix_ui_terminal_journal d-flex flex-column pt-3 pb-4 px-2 mx-2 mr-0" data-id="terminalJournal">
               {!terminalState.clearConsole && <TerminalWelcomeMessage storage={storage} packageJson={version} />}
               {terminalState.journalBlocks &&
@@ -800,6 +969,17 @@ const typewrite = (elementsRef, message, callback) => {
 function isHtml (value) {
   if (!value.indexOf) return false
   return value.indexOf('<div') !== -1 || value.indexOf('<span') !== -1 || value.indexOf('<p') !== -1 || value.indexOf('<label') !== -1 || value.indexOf('<b') !== -1
+}
+
+function findLabelWithClass(element, className) {
+  let targetLabels = [];
+  if (element.tagName.toLowerCase() === 'label' && element.classList.contains('m-0') && element.classList.contains(className)) {
+    targetLabels.push(element);
+  }
+  for (const child of element.children) {
+    targetLabels = targetLabels.concat(findLabelWithClass(child, className));
+  }
+  return targetLabels;
 }
 
 export default RemixUiTerminal

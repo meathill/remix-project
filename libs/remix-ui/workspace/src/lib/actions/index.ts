@@ -8,7 +8,7 @@ import { createWorkspaceTemplate, getWorkspaces, loadWorkspacePreset, setPlugin,
 import { QueryParams, Registry } from '@remix-project/remix-lib'
 import { fetchContractFromEtherscan, fetchContractFromBlockscout } from '@remix-project/core-plugin' // eslint-disable-line
 import JSZip from 'jszip'
-import { Actions, FileTree } from '../types'
+import { Actions, FileTree, WorkspaceTemplate } from '../types'
 import IpfsHttpClient from 'ipfs-http-client'
 import { AppModal } from '@remix-ui/app'
 import { MessageWrapper } from '../components/file-explorer'
@@ -29,7 +29,9 @@ export type UrlParametersType = {
   address: string
   opendir: string,
   blockscout: string,
-  ghfolder: string
+  ghfolder: string,
+  workspace: string,
+  template: WorkspaceTemplate,
 }
 
 const basicWorkspaceInit = async (workspaces: { name: string; isGitRepo: boolean; }[], workspaceProvider) => {
@@ -199,6 +201,30 @@ export const initWorkspace = (filePanelPlugin) => async (reducerDispatch: React.
       dispatch(fsInitializationCompleted())
       plugin.emit('workspaceInitializationCompleted')
       return
+
+    } else if (params.workspace) {
+      const workspaceName = params.workspace
+      const template = `q_${params.workspace.replace(/-/g, '_')}` as WorkspaceTemplate
+      const index = workspaces.findIndex(element => element.name == workspaceName)
+      if (index !== -1) {
+        workspaceProvider.setWorkspace(workspaceName)
+        plugin.setWorkspace({ name: workspaceName, isLocalhost: false })
+        dispatch(setCurrentWorkspace({ name: workspaceName, isGitRepo: false }))
+      } else {
+        await createWorkspaceTemplate(workspaceName, template);
+        plugin.setWorkspace({ name: workspaceName, isLocalhost: false })
+        dispatch(setCurrentWorkspace({ name: workspaceName, isGitRepo: false }))
+        await loadWorkspacePreset(template)
+      }
+      const filePath = '/index.sol'
+      plugin.on('filePanel', 'workspaceInitializationCompleted', async () => {
+        if (editorMounted){
+          setTimeout(async () => {
+            await plugin.fileManager.openFile(filePath)}, 1000)
+        } else {
+          filePathToOpen = filePath
+        }
+      })
 
     } else if (localStorage.getItem("currentWorkspace")) {
       const index = workspaces.findIndex(element => element.name == localStorage.getItem("currentWorkspace"))
@@ -733,4 +759,3 @@ export const moveFoldersIsAllowed = async (src: string[], dest: string) => {
   }
   return boolArray.every(p => p === true) || false
 }
-

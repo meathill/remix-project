@@ -127,7 +127,7 @@ export const RemixUIGridView = (props: RemixUIGridViewProps) => {
                 </div>
                 <div className='d-flex flex-row'>
                   { Object.keys(keyValueMap).map((key) => (
-                    <CustomCheckbox label={key} />
+                    <CustomCheckbox label={key} key={key} />
                   )) }
                 </div>
               </div>

@@ -69,7 +69,8 @@ module.exports = composePlugins(withNx(), withReact(), (config) => {
     readline: false,
     child_process: false,
     buffer: require.resolve('buffer/'),
-    vm: require.resolve('vm-browserify')
+    vm: require.resolve('vm-browserify'),
+    async_hooks: false,
   }
 
   // add externals

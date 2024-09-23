@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, SyntheticEvent, useContext, useCallback } from 'react' // eslint-disable-line
+import React, { useEffect, useState, useRef, SyntheticEvent, useContext } from 'react' // eslint-disable-line
 import { useIntl } from 'react-intl'
 import { TreeView } from '@remix-ui/tree-view' // eslint-disable-line
 import { FileExplorerMenu } from './file-explorer-menu' // eslint-disable-line
@@ -307,7 +307,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 
   const createNewFile = async (newFilePath: string) => {
     try {
-      props.dispatchCreateNewFile(newFilePath, ROOT_PATH)
+      await props.dispatchCreateNewFile(newFilePath, ROOT_PATH)
     } catch (error) {
       return props.modal(
         intl.formatMessage({ id: 'filePanel.fileCreationFailed' }),

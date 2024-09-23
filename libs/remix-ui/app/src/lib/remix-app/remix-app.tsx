@@ -3,7 +3,6 @@ import './style/remix-app.css'
 import { RemixUIMainPanel } from '@remix-ui/panel'
 import MatomoDialog from './components/modals/matomo'
 import EnterDialog from './components/modals/enter'
-import OriginWarning from './components/modals/origin-warning'
 import DragBar from './components/dragbar/dragbar'
 import { AppProvider } from './context/provider'
 import AppDialogs from './components/modals/dialogs'
@@ -175,7 +174,6 @@ const RemixApp = (props: IRemixAppUi) => {
       <platformContext.Provider value={props.app.platform}>
         <onLineContext.Provider value={online}>
           <AppProvider value={value}>
-            <OriginWarning></OriginWarning>
             <MatomoDialog hide={!appReady} okFn={() => setShowEnterDialog(true)}></MatomoDialog>
             {showEnterDialog && <EnterDialog handleUserChoice={(type) => handleUserChosenType(type)}></EnterDialog>}
             <div className='d-flex flex-column'>

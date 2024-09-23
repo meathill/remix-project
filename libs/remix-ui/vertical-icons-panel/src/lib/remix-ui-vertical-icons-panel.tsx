@@ -1,4 +1,4 @@
-import React, { Fragment, useContext, useEffect, useReducer, useRef, useState } from 'react'
+import React, { Fragment, useContext, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react'
 import { Plugin } from '@remixproject/engine'
 import './remix-ui-vertical-icons-panel.css'
 import IconList from './components/IconList'
@@ -38,6 +38,10 @@ const RemixUiVerticalIconsPanel = ({ verticalIconsPlugin, icons }: RemixUiVertic
       }
     })
   }
+
+  useLayoutEffect(() => {
+    (verticalIconsPlugin as any).toggle('filePanel')
+  }, [])
 
   useEffect(() => {
     window.addEventListener('resize', evaluateScrollability)
